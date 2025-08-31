@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <!-- Upper box -->
+    <!-- 上面的 cards -->
     <div class="box top">
       <div class="cards">
         <button
@@ -10,33 +10,32 @@
           :class="{ selected: selectedCards.includes(index) }"
           @click="toggleCard(index)"
         >
-          {{ card.type }} {{ card.value }}$
+          <text>{{ card.name }}</text>
+          <text>{{ card.value }}$ / -{{ card.loss }}$</text>
         </button>
       </div>
     </div>
 
-    <!-- Action buttons -->
-    <div class="btn-wrap">
-      <button @click="dealCards">deal cards</button>
-      <button @click="changeCards">change cards</button>
-      <button @click="clearCards">clear</button>
-      <button @click="claim">claim</button>
-    </div>
-
-    <!-- Bottom box -->
-    <div class="box bottom">
-      <label>
-        Money:
-        <input v-model="money" type="number" />
-      </label>
-
-      <!-- Labels -->
+    <!-- 下面左右布局 -->
+    <div class="bottom">
+      <!-- 左边 labels -->
       <div class="labels">
-        <div>Bread {{ counts.bread }}</div>
-        <div>Apple {{ counts.apple }}</div>
-        <div>Chicken {{ counts.chicken }}</div>
-        <div>Butter {{ counts.butter }}</div>
-        <div>Contraband {{ counts.contraband }}</div>
+        <label>
+          Money:
+          <input v-model="money" type="number" />
+        </label>
+        <div>Bread: {{ counts.bread }}</div>
+        <div>Apple: {{ counts.apple }}</div>
+        <div>Chicken: {{ counts.chicken }}</div>
+        <div>Cheese: {{ counts.cheese }}</div>
+      </div>
+
+      <!-- 右边按钮 -->
+      <div class="btn-wrap">
+        <button @click="dealCards">deal</button>
+        <button @click="changeCards">change</button>
+        <button @click="clearCards">clear</button>
+        <button @click="claim">claim</button>
       </div>
     </div>
   </div>
@@ -45,15 +44,15 @@
 <script setup>
 import { ref } from "vue";
 
-const cardsDefinition={
-  apple: { quantity: 2, loss: 2, count: 48 },
-  cheese: { quantity: 3, loss: 2, count: 36 },
-  bread: { quantity: 3, loss: 2, count: 36 },
-  chicken: { quantity: 4, loss: 2, count: 24 },
-  contraband: { quantity: 8, loss: 4, count: 60 }
+const cardsDefinition = {
+  apple: { value: 2, loss: 2, count: 48, name: "apple" },
+  cheese: { value: 3, loss: 2, count: 36, name: "cheese" },
+  bread: { value: 3, loss: 2, count: 36, name: "bread" },
+  chicken: { value: 4, loss: 2, count: 24, name: "chicken" },
+  contraband: { value: 8, loss: 4, count: 60, name: "contraband" },
 };
-const deck = Object.entries(items)
-  .map(([key, value]) => Array(value.count).fill(key))
+const deck = Object.entries(cardsDefinition)
+  .map(([name, value]) => Array(value.count).fill({ ...value }))
   .flat();
 const totalCardSize = 204;
 const items = Object.keys(cardsDefinition);
@@ -64,18 +63,17 @@ const counts = ref({
   bread: 0,
   apple: 0,
   chicken: 0,
-  butter: 0,
+  cheese: 0,
   contraband: 0,
 });
 
-function randomCard() {
-  let r = Math.floor(Math.random() * total);
-
+function getRandomCard() {
+  let r = Math.floor(Math.random() * totalCardSize);
   return deck[r];
 }
 
 function dealCards() {
-  cards.value = Array.from({ length: 6 }, () => randomCard());
+  cards.value = Array.from({ length: 6 }, () => getRandomCard());
   selectedCards.value = [];
 }
 
@@ -89,11 +87,7 @@ function toggleCard(index) {
 
 function changeCards() {
   selectedCards.value.forEach((idx) => {
-    const type = items[Math.floor(Math.random() * items.length)];
-    cards.value[idx] = {
-      type,
-      value: cardValues[type], // 初始化固定 value
-    };
+    cards.value[idx] = getRandomCard();
   });
   selectedCards.value = [];
 }
@@ -109,8 +103,8 @@ function claim() {
   selectedCards.value.forEach((idx) => {
     const card = cards.value[idx];
     total += card.value; // 累加 money
-    if (counts.value[card.type] !== undefined) {
-      counts.value[card.type]++; // 记录每种类型的数量
+    if (counts.value[card.name] !== undefined) {
+      counts.value[card.name]++;
     }
   });
 
@@ -122,41 +116,35 @@ function claim() {
   );
 
   selectedCards.value = [];
+  cards.value = [];
 }
 </script>
 
-<style>
-#app {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  min-height: 100vh; /* 整个页面占满屏幕高度 */
+<style scoped>
+/* 整体垂直：上（cards）/下（bottom） */
+.page {
+  display: grid;
+  gap: 16px;
   padding: 10px;
 }
 
-.box {
-  width: 80%;
-  border: 1px solid #333;
-  padding: 20px;
-  border-radius: 8px;
-}
-
-.box.top {
-  width: 90%; /* 手机屏幕适配 */
-  max-width: 400px; /* 最大宽度防止过大 */
-  height: 200px; /* 固定高度 */
+/* 上方 cards 容器 */
+.top {
+  width: 100%;
+  margin: 0 auto;
   border: 1px solid #ccc;
+  padding: 8px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding: 5px;
+  justify-content: center;
+  height: 50vh; /* 固定高度 */
 }
 
+/* cards 网格 */
 .cards {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* 3列 */
-  grid-template-rows: repeat(2, 1fr); /* 2行 */
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 1fr);
   gap: 8px;
   width: 100%;
   height: 100%;
@@ -164,42 +152,85 @@ function claim() {
 
 .card-btn {
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   font-size: 16px;
   border-radius: 6px;
-  cursor: pointer;
-  width: 100%; /* 填满格子宽度 */
-  height: 100%; /* 填满格子高度 */
+  width: 100%;
+  height: 100%;
   box-sizing: border-box;
-  white-space: nowrap; /* 防止换行拉伸按钮 */
-  overflow: hidden; /* 避免文字溢出 */
+  white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
+  flex-direction: column; /* 竖排排列 */
 }
-
 .card-btn.selected {
   border: 3px solid blue;
 }
 
+/* 下方左右两栏：左 labels | 右 btn-wrap */
+.bottom {
+  display: grid;
+  grid-template-columns: 220px 1fr; /* 左列固定/右列自适应 */
+  gap: 20px;
+  width: 100%;
+  max-width: 900px; /* 可按需调整 */
+  margin: 0 auto;
+  align-items: start;
+  height: 50vh;
+}
+
+/* 竖排 labels（提高特异性覆盖旧样式） */
+.bottom .labels {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 50vh;
+}
+
 .btn-wrap {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* 四列均分 */
   gap: 15px;
-  width: 80%;
 }
 
 .btn-wrap button {
-  padding: 15px 0;
+  width: 100%; /* 填满格子 */
+  height: 60px; /* 固定高度，可按需调整 */
   font-size: 1rem;
   border: none;
   border-radius: 6px;
   background: #eee;
   cursor: pointer;
+  display: flex; /* 居中内容 */
+  align-items: center;
+  justify-content: center;
 }
 
-.labels {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 15px;
+/* 小屏自适应：按钮改两列 */
+@media (max-width: 560px) {
+  .bottom {
+    grid-template-columns: 160px 1fr;
+  }
+  .btn-wrap {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+input {
+  width: auto;
+  padding: 8px 12px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus {
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 </style>
